@@ -1,4 +1,4 @@
-openapi: "3.0.0"
+openapi: 3.0.0
 info:
   version: 1.0.0
   title: Swagger Petstore
@@ -22,7 +22,7 @@ paths:
             type: integer
             format: int32
       responses:
-        '200':
+        200:
           description: A paged array of pets
           headers:
             x-next:
@@ -45,7 +45,7 @@ paths:
       tags:
         - pets
       responses:
-        '201':
+        201:
           description: Null response
         default:
           description: unexpected error
@@ -67,7 +67,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        200:
           description: Expected response to a valid request
           content:
             application/json:
@@ -93,12 +93,21 @@ components:
           type: integer
           format: int64
         name:
-          example: "Buddy"
+          example: Buddy
           type: string
+        kind:
+          enum:
+            - dog
+            - cat
+            - bird
+            - fish
+          example: bird
+          type: string
+          description: Kind of animal
         tag:
           type: string
     Store:
-      description:
+      description: ~
       type: object
       required:
         - pets
