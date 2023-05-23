@@ -24,6 +24,9 @@ class Snapshotter {
     /// Processes a snapshot at the given path by either asserting a match against a stored snapshot, or rewriting it.
     func processSnapshot(at generatedURL: URL, against name: String) throws -> URL {
         let snapshotURL = snapshotLocation(for: name)
+        
+        print("DDD: snapshotURL ='\(snapshotURL)'")
+        print("DDD: generatedURL ='\(generatedURL)'")
 
         switch behavior {
         case .assert:

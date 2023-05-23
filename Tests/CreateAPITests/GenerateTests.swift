@@ -66,4 +66,20 @@ final class GenerateTests: GenerateTestCase {
             name: "cookpad"
         )
     }
+    
+    // INFO: Zumiez -
+    
+    func testZumiezV1() throws {
+        try snapshot(
+            spec: .zumiezV1,
+            name: "ZumiezV1"
+        )
+    }
+    
+    func testZumiezV2() throws {
+        try snapshot(
+            spec: .zumiezV2,
+            name: "ZumiezV2"
+        )
+    }
 }

@@ -27,6 +27,9 @@ class GenerateTestCase: XCTestCase {
     ) throws {
         let outputURL = temp.url
             .appendingPathComponent("Output")
+        
+        print("DDD: Output URL='\(outputURL)'")
+        print("DDD: Spec Path ='\(spec.path)'")
 
         // Append the output, and spec to the arguments passed
         var arguments = arguments

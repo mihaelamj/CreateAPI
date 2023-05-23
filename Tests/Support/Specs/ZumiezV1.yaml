@@ -1,0 +1,838 @@
+openapi: "3.0.2"
+info:
+  title: "Zumiez API"
+  description: "The Zumirz API Integration is a collection of RESTful APIs which support the Zumiez Hatch Mobile App (\"App\") by providing login services, data storage and commerce capabilities.\n\n**NOTE**: The Zumiez API uses OAuth 1.0a for authentication. The `Try It Out` functionality below will not be operable."
+  version: "1.0"
+servers:
+  - url: "https://www.zumiez.com/api/rest/"
+    description: "Production"
+  - url: "https://preview9.zumiez.com/api/rest/"
+    description: "Preview 9"
+tags:
+  - name: User
+  - name: Data
+  - name: Commerce
+  - name: Employee
+paths:
+  /user/login:
+    post:
+      tags:
+        - User
+      summary: "User authentication"
+      description: "The Login API accepts either a Username and Password (for account authentication) or Social ID and Token (for social authentication). The generated session ID should be securely stored for the lifetime of the customer session and then destroyed. The session ID will also be required for other API calls. The Session ID can be refreshed with the Refresh Token API.\n\nIn addition to the Session ID, the Login API also provides a JSON Web Token. This token is intended to facilitate authentication for Firebase.\n\nWhen a user has an existing Magento and Stash account with different passwords, the Login API may fail with HTTP Code `409 Conflict`. In this instance, the Login API should be called again and supplied with both the Magento and the Stash passwords"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              Magento:
+                summary: "Magento Account"
+                value:
+                  username: "user@domain.com"
+                  password: "password1234"
+              Social:
+                summary: "Social Account"
+                value:
+                  social_type: "facebook"
+                  social_id: "123456"
+                  social_token: "0123456789abcdef"
+      responses:
+        '200':
+          description: "The authentication was successful. If the Magento account is associated with a CrowdTwist account the response will include `crowdtwist_id`, `stash_key` and `stash_token`."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+  /user/refreshtoken:
+    post:
+      tags:
+        - User
+      summary: "Refresh Session ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+  /user/create:
+    post:
+      tags:
+        - User
+      summary: "Creates a new Magento Customer Account"
+      description: "In addition to the Magento Account, a Stash account will also attempt to be created. If successful, the response will include an associated CrowdTwist ID."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUserResponse'
+  /user/forgotpassword:
+    post:
+      tags:
+        - User
+      summary: "Triggers a password recovery e-mail to the specified user."
+      description: "Will return success regardless of user existence."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: OK
+  /data/customers:
+    get:
+      tags:
+        - Data
+      summary: "Returns a collection of Customer Profiles"
+      parameters:
+        - $ref: '#/components/parameters/since'
+        - $ref: '#/components/parameters/page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomersResponse'
+  /data/customers/{session_id}:
+    get:
+      tags:
+        - Data
+      summary: "Returns the specified User Profile"
+      parameters:
+        - $ref: '#/components/parameters/session_id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+    post:
+      tags:
+        - Data
+      summary: "Updates the specified User Profile"
+      parameters:
+        - $ref: '#/components/parameters/session_id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+  /data/orders:
+    get:
+      tags:
+        - Data
+      summary: "Returns a collection of Order Data"
+      parameters:
+        - $ref: '#/components/parameters/since'
+        - $ref: '#/components/parameters/page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdersResponse'
+  /data/orders/{session_id}:
+    get:
+      tags:
+        - Data
+      summary: "Returns a collection of Order Data for orders created by the specified user"
+      parameters:
+        - $ref: '#/components/parameters/session_id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdersResponse'
+  /data/list/orders:
+    get:
+      tags:
+        - Data
+      summary: "Returns a list of orders"
+      parameters:
+        - $ref: '#/components/parameters/since'
+        - $ref: '#/components/parameters/page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+  /data/query:
+    get:
+      tags:
+        - Data
+      summary: "Executes a query with Google BigQuery"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
+              example: [{"zuid": 11111111,"total_skate_hardgoods_department": 0,"total": 0},{"zuid": 22222222,"total_skate_hardgoods_department": 6,"total": 6}]
+  /employee/verify:
+    get:
+      tags:
+        - Employee
+      summary: "Verifies an Employee Sales Code"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeVerifyRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeVerifyResponse'
+  /orders/session:
+    post:
+      tags:
+        - Commerce
+      summary: "Creates a new Aurus Session and Iframe URL"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderSessionRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderSessionResponse'
+  /orders/create:
+    post:
+      tags:
+        - Commerce
+      summary: "Creates a new Magento Order"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdersResponse'
+  /orders/update:
+    post:
+      tags:
+        - Commerce
+      summary: "Updates an existing Magento Order"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderUpdateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdersResponse'
+  /orders/place:
+    post:
+      tags:
+        - Commerce
+      summary: "Completes the checkout process and places a Magento Order"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderPlaceRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdersResponse'
+components:
+  parameters:
+    since:
+      name: since
+      in: query
+      description: "Unix time"
+      schema:
+        type: number
+    page:
+      name: page
+      in: query
+      description: "Page number"
+      schema:
+        type: number
+    session_id:
+      name: session_id
+      in: path
+      description: "Session ID returned by Login API"
+      required: true
+      schema:
+        type: string
+  schemas:
+    AddressObject:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        region:
+          type: string
+          description: "Two-letter State value. I.e, CA for California"
+        postcode:
+          type: string
+        country_id:
+          type: string
+          description: "ISO-3166 two-letter Country value. I.e., US for United States, CA for Canada"
+        company:
+          type: string
+        email:
+          type: string
+        title:
+          type: string
+        prefix:
+          type: string
+        firstname:
+          type: string
+        middlename:
+          type: string
+        lastname:
+          type: string
+        suffix:
+          type: string
+        telephone:
+          type: string
+      required:
+        - street
+        - city
+        - region
+        - postcode
+        - country_id
+        - email
+        - firstname
+        - lastname
+        - telephone
+    OrderObject:
+      type: object
+      properties:
+        increment_id:
+          type: string
+        created_at:
+          type: string
+        status:
+          type: string
+        shipping_description:
+          type: string
+        _payment_method:
+          type: string
+        base_currency_code:
+          type: string
+        store_currency_code:
+          type: string
+        store_name:
+          type: string
+        remote_ip:
+          type: string
+        store_to_order_rate:
+          type: string
+        subtotal:
+          type: number
+        subtotal_incl_tax:
+          type: string
+        discount_amount:
+          type: string
+        base_grand_total:
+          type: number
+        grand_total:
+          type: number
+        shipping_amount:
+          type: number
+        shipping_tax_amount:
+          type: string
+        shipping_incl_tax:
+          type: string
+        tax_amount:
+          type: number
+        _tax_name:
+          type: string
+        _tax_rate:
+          type: string
+        coupon_code:
+          type: string
+        base_discount_amount:
+          type: string
+        base_subtotal:
+          type: number
+        base_shipping_amount:
+          type: string
+        base_shipping_tax_amount:
+          type: string
+        base_tax_amount:
+          type: string
+        total_paid:
+          type: string
+        base_total_paid:
+          type: string
+        total_refunded:
+          type: string
+        base_total_refunded:
+          type: string
+        base_subtotal_incl_tax:
+          type: string
+        base_total_due:
+          type: string
+        total_due:
+          type: string
+        shipping_discount_amount:
+          type: string
+        base_shipping_discount_amount:
+          type: string
+        discount_description:
+          type: string
+        customer_balance_amount:
+          type: string
+        base_customer_balance_amount:
+          type: string
+        _gift_message:
+          type: string
+        _order_comments:
+          type: string
+        customer_id:
+          type: string
+        order_items:
+          $ref: '#/components/schemas/OrderItemsObject'
+        quote_id:
+          type: string
+        shipping_rate_code:
+          type: string
+        shipping_rates:
+          $ref: '#/components/schemas/ShippingMethodsObject'
+    OrderItemsObject:
+      type: object
+      properties:
+        entity_id:
+          type: string
+        increment_id:
+          type: string
+        created_at:
+          type: string
+        status:
+          type: string
+        shipping_description:
+          type: string
+        _payment_method:
+          type: string
+        base_currency_code:
+          type: string
+        store_currency_code:
+          type: string
+        store_name:
+          type: string
+        remote_ip:
+          type: string
+        store_to_order_rate:
+          type: string
+        subtotal:
+          type: number
+        subtotal_incl_tax:
+          type: string
+        discount_amount:
+          type: string
+        base_grand_total:
+          type: number
+        grand_total:
+          type: number
+        shipping_amount:
+          type: number
+        shipping_tax_amount:
+          type: string
+        shipping_incl_tax:
+          type: string
+        tax_amount:
+          type: number
+        _tax_name:
+          type: string
+        _tax_rate:
+          type: string
+        coupon_code:
+          type: string
+        base_discount_amount:
+          type: string
+        base_subtotal:
+          type: number
+        base_shipping_amount:
+          type: string
+        base_shipping_tax_amount:
+          type: string
+        base_tax_amount:
+          type: string
+        total_paid:
+          type: string
+        base_total_paid:
+          type: string
+        total_refunded:
+          type: string
+        base_total_refunded:
+          type: string
+        base_subtotal_incl_tax:
+          type: string
+        base_total_due:
+          type: string
+        total_due:
+          type: string
+        shipping_discount_amount:
+          type: string
+        base_shipping_discount_amount:
+          type: string
+        discount_description:
+          type: string
+        customer_balance_amount:
+          type: string
+        base_customer_balance_amount:
+          type: string
+        _gift_message:
+          type: string
+        _order_comments:
+          type: string
+        customer_id:
+          type: string
+    OrderListObject:
+      type: object
+      properties:
+        increment_id:
+          type: string
+          description: "Magento Order ID"
+          example: "1592018080484"
+        customer_id:
+          type: string
+          description: "Magento Customer ID"
+          example: "1234567890"
+    ShippingMethodsObject:
+      type: array
+      items:
+        type: object
+        properties:
+          code:
+            type: string
+          name:
+            type: string
+          description:
+            type: string
+          price:
+            type: number
+    UserObject:
+      type: object
+      description: Not all fields will be returned for all requests.
+      properties:
+        dob:
+          type: string
+        email:
+          type: string
+        firstname:
+          type: string
+        gender:
+          type: string
+        lastname:
+          type: string
+        middlename:
+          type: string
+        mobile_number:
+          type: string
+        prefix:
+          type: string
+        suffix:
+          type: string
+        id:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        is_active:
+          type: string
+        default_billing:
+          $ref: '#/components/schemas/AddressObject'
+        default_shipping:
+          $ref: '#/components/schemas/AddressObject'
+        default_home:
+          $ref: '#/components/schemas/AddressObject'
+        wishlist:
+          type: array
+          items:
+            type: string
+        myzumiez_store_id:
+          type: string
+        preferred_store_country:
+          type: string
+        stash_id:
+          type: string
+        employee_sales_code:
+          type: string
+        employee_start_date:
+          type: string
+        employee_status:
+          type: string
+        size_bottom:
+          type: string
+        size_shoe:
+          type: string
+        size_top:
+          type: string
+        size_type:
+          type: string
+      required:
+        - firstname
+        - lastname
+        - email
+        - password
+    CreateUserRequest:
+      $ref: '#/components/schemas/UserObject'
+    CreateUserResponse:
+      $ref: '#/components/schemas/UserObject'
+    CustomersResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/UserObject'
+    CustomerResponse:
+      $ref: '#/components/schemas/UserObject'
+    EmployeeVerifyRequest:
+      type: object
+      properties:
+        sales_code:
+          type: string
+          description: "Employee Sales Code"
+          example: "AA0123"
+    EmployeeVerifyResponse:
+      type: object
+      properties:
+        sales_code:
+          type: string
+          description: "Employee Sales Code"
+          example: "AA0123"
+        status:
+          type: integer
+          description: "Current Employee Status\nValues:\n* `0` - Not an Employee\n* `1` - Active Employee\n* `2` - Inactive Employee"
+          enum: [0, 1, 2]
+          example: 1
+    ForgotPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          description: "Customer e-mail address"
+          example: "user@domain.com"
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          description: "Magento Customer Account E-mail Address - Requires password"
+        password:
+          type: string
+          description: "Magento Customer Account Password - Requires username"
+        stash_password:
+          type: string
+          description: "CrowdTwist Account Password"
+        social_type:
+          type: string
+          description: "Identifies the type of social credentials supplied - Requires social_id and social_token"
+          enum:
+            - facebook
+            - twitter
+        social_id:
+          type: string
+          description: "User ID returned by social network - Requires social_type"
+        social_token:
+          type: string
+          description: "User token returned by social network - Requires social_type"
+    LoginResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: "A unique session ID for the authenticated customer."
+          example: "34q1ipeuis17294me76uvid341"
+        token:
+          type: string
+          description: "JSON Web Token"
+          example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJtYWdlbnRvQHp1bWllei1zdGFzaC1kZXYuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiJtYWdlbnRvQHp1bWllei1zdGFzaC1kZXYuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOiJodHRwczpcL1wvaWRlbnRpdHl0b29sa2l0Lmdvb2dsZWFwaXMuY29tXC9nb29nbGUuaWRlbnRpdHkuaWRlbnRpdHl0b29sa2l0LnYxLklkZW50aXR5VG9vbGtpdCIsImlhdCI6MTU3NDcxODY4OSwiZXhwIjoxNTc0NzIyMjg5LCJ1aWQiOiIyMSJ9.iMdTNYpsZ8UuZN4UtIbRjPy73YFI2P/WOq+1SsncHg83/AbXigJv2xsi+72HOQW+00Vln4I95dt3BPgL4sM3Eh8SRbC0qalJmKFBNLZKj2HIMWsCujwuz48sfnLYO1R/0wSaXDRndiiopdgMk/UTewVths1TYCUlL/xOBFF/fKWZa/3Arm7LBMlgjPvVEgGULzbVK+u+DFBxlXRyFGiibr+EmbLNAjTY1TeNMV/e5PBdF8SM1f0zAqfXIX6eU/SMgFshG5bRvgGHCdXh/saa8m6PIiOrKwqneGetro2Jsz7fF9HBbO3TQqpYpPejKi8tjPJfFf1uOFWvkXaCSmn4eg=="
+        stash_key:
+          type: string
+          description: "The key returned by the CrowdTwist Mobile Authentication API"
+          example: "2da23cf7ed0acaf9b8c46926a36ae7fe"
+        stash_token:
+          type: string
+          description: "The token returned by the CrowdTwist Mobile Authentication API"
+          example: "f35423a5ff2e9d683a7f9720c8fe9cab"
+        accounts:
+          type: object
+          description: "The account ID of the user in any connected system"
+          properties:
+            crowdtwist_id:
+              type: string
+              description: CrowdTwist Account ID
+              example: 61162948
+    OrdersResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/OrderObject'
+    OrderListResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/OrderListObject'
+    OrderSessionRequest:
+      type: object
+      properties:
+        customer_token:
+          type: string
+          description: "Customer session ID. Returned by Login API"
+        billing_address:
+          $ref: '#/components/schemas/AddressObject'
+        shipping_address:
+          $ref: '#/components/schemas/AddressObject'
+    OrderCreateRequest:
+      type: object
+      properties:
+        customer_token:
+          type: string
+          description: "Customer session ID. Returned by Login API"
+        billing_address:
+          $ref: '#/components/schemas/AddressObject'
+        shipping_address:
+          $ref: '#/components/schemas/AddressObject'
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              sku:
+                type: string
+                description: Item SKU
+                example: "27317506670014"
+              qty:
+                type: string
+                description: Number of items to order
+                example: "1"
+    OrderPlaceRequest:
+      type: object
+      properties:
+        customer_token:
+          type: string
+          description: "Customer session ID. Returned by Login API"
+        quote_id:
+          type: string
+          description: "Quote ID returned by Create Order API"
+        shipping_method:
+          type: string
+          description: "One of the available shipping method codes returned by the Create Order API"
+        payment_type:
+          type: string
+          enum: ["aurus", "applepay", "paypal"]
+        payment_token:
+          type: string
+          description: "Secure token returned by Payment Gateway"
+        paypal_payment_id:
+          type: string
+          description: "Returned by PayPal"
+        paypal_payer_id:
+          type: string
+          description: "Returned by PayPal"
+        card_type:
+          type: string
+          description: "Type of Credit Card used with Aurus"
+        card_expiration:
+          type: string
+          description: "Returned by Aurus"
+        masked_card:
+          type: string
+          description: "Returned by Aurus"
+        response_code:
+          type: string
+          description: "Returned by Aurus"
+        response_text:
+          type: string
+          description: "Returned by Aurus"
+    OrderSessionResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: "Aurus Session ID"
+        iframe_url:
+          type: string
+          description: "Aurus Payment IFrame URL"
+    OrderUpdateRequest:
+      type: object
+      properties:
+        customer_token:
+          type: string
+          description: "Customer session ID. Returned by Login API"
+        quote_id:
+          type: string
+          description: "Quote ID returned by Create Order API"
+        shipping_method:
+          type: string
+          description: "One of the available shipping method codes returned by the Create Order API"
+    RefreshTokenRequest:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: "Session ID returned by Login API"
+          example: "fc3ulsm7gsvdtqi8j6u5l1o041"
+    RefreshTokenResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          example: "r6hu947m7h3b0kk6khmvthnah6"
+    QueryRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          description: A Google BigQuery statement
+          example: "SELECT * FROM `ema-zumiez.hatch_users.user_preference_skate` LIMIT 1000"
+    QueryResponse:
+      type: array
+      items:
+        type: array
+        items:
+          type: string
