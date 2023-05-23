@@ -104,6 +104,22 @@ struct Generate: ParsableCommand {
         let outputURL = URL(filePath: output)
         let output = Output(paths: paths, entities: schemas, package: package, options: options)
 
+        // MMMJ:
+        let specPaths = spec.paths
+        for (key, path) in specPaths {
+            print("key: \(key)")
+            print("path: \(path)")
+        }
+        
+        let specComps = spec.components
+        let specSchemas = specComps.schemas
+        for schema in specSchemas {
+            for (key, schema) in specPaths {
+                print("key: \(key)")
+                print("schema: \(schema)")
+            }
+        }
+        
         if clean { try? FileManager.default.removeItem(at: outputURL) }
 
         let benchmark = Benchmark(name: "Write output files")
